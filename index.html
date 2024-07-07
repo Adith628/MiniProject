@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Exoplanet Habitability Prediction</title>
+</head>
+
+<body>
+    <h1>Upload CSV for Habitability Prediction</h1>
+    <form action="http://localhost:5000/predict" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit">Upload and Predict</button>
+    </form>
+    <div id="results"></div>
+    <script>
+        const form = document.querySelector('form');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: form.method,
+                body: formData,
+            });
+            const results = await response.json();
+            document.getElementById('results').innerText = JSON.stringify(results, null, 2);
+        });
+    </script>
+</body>
+
+</html>
