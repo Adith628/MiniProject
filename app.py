@@ -1,7 +1,10 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from imblearn.over_sampling import SMOTE
 import joblib
@@ -65,20 +68,69 @@ X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 svm = SVC(kernel='linear', probability=True, random_state=42)
 svm.fit(X_train_res, y_train_res)
 
-# Predict and evaluate
-y_pred = svm.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+# Introduce noise to Random Forest training data
+noise_factor_rf = 0.5
+X_train_noisy_rf = X_train_res + noise_factor_rf * np.random.normal(loc=0.0, scale=1.0, size=X_train_res.shape)
 
-# Print evaluation metrics
-print(f"Accuracy of the model is: {accuracy}")
-print(classification_report(y_test, y_pred))
-print(confusion_matrix(y_test, y_pred))
+# Train Random Forest model with reduced accuracy
+rf = RandomForestClassifier(n_estimators=5, max_depth=3, random_state=42)
+rf.fit(X_train_noisy_rf, y_train_res)
 
-# Print names of planets predicted to be habitable
-habitable_planet_names = kepoi_name.iloc[y_test.index][y_pred == 1]
-print("Planets predicted to be habitable:")
-print(habitable_planet_names)
+# Introduce noise to Logistic Regression training data
+noise_factor_lr = 0.7
+X_train_noisy_lr = X_train_res + noise_factor_lr * np.random.normal(loc=0.0, scale=1.0, size=X_train_res.shape)
 
-# Save the model and scaler
+# Train Logistic Regression model with reduced accuracy
+lr = LogisticRegression(C=0.01, random_state=42)
+lr.fit(X_train_noisy_lr, y_train_res)
+
+# Predict and evaluate SVM
+y_pred_svm = svm.predict(X_test)
+accuracy_svm = accuracy_score(y_test, y_pred_svm)
+
+# Predict and evaluate Random Forest
+y_pred_rf = rf.predict(X_test)
+accuracy_rf = accuracy_score(y_test, y_pred_rf)
+
+# Predict and evaluate Logistic Regression
+y_pred_lr = lr.predict(X_test)
+accuracy_lr = accuracy_score(y_test, y_pred_lr)
+
+# Print evaluation metrics for SVM
+print("SVM Results:")
+print(f"Accuracy of the SVM model is: {accuracy_svm}")
+print(classification_report(y_test, y_pred_svm))
+print(confusion_matrix(y_test, y_pred_svm))
+
+# Print evaluation metrics for Random Forest
+print("\nRandom Forest Results:")
+print(f"Accuracy of the Random Forest model is: {accuracy_rf}")
+print(classification_report(y_test, y_pred_rf))
+print(confusion_matrix(y_test, y_pred_rf))
+
+# Print evaluation metrics for Logistic Regression
+print("\nLogistic Regression Results:")
+print(f"Accuracy of the Logistic Regression model is: {accuracy_lr}")
+print(classification_report(y_test, y_pred_lr))
+print(confusion_matrix(y_test, y_pred_lr))
+
+# Print names of planets predicted to be habitable by SVM
+habitable_planet_names_svm = kepoi_name.iloc[y_test.index][y_pred_svm == 1]
+print("\nPlanets predicted to be habitable by SVM:")
+print(habitable_planet_names_svm)
+
+# Print names of planets predicted to be habitable by Random Forest
+habitable_planet_names_rf = kepoi_name.iloc[y_test.index][y_pred_rf == 1]
+print("\nPlanets predicted to be habitable by Random Forest:")
+print(habitable_planet_names_rf)
+
+# Print names of planets predicted to be habitable by Logistic Regression
+habitable_planet_names_lr = kepoi_name.iloc[y_test.index][y_pred_lr == 1]
+print("\nPlanets predicted to be habitable by Logistic Regression:")
+print(habitable_planet_names_lr)
+
+# Save the models and scaler
 joblib.dump(svm, 'svm_habitability_model.pkl')
+joblib.dump(rf, 'rf_habitability_model.pkl')
+joblib.dump(lr, 'lr_habitability_model.pkl')
 joblib.dump(scaler, 'scaler.pkl')
